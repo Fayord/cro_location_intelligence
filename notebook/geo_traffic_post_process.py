@@ -1,9 +1,11 @@
 from PIL import Image
 import os
 from tqdm import tqdm
-from geo_utils import crop_middle_image_from_side_size
+from geo_utils import crop_middle_image_from_side_size, apply_circle_mask
 
-HEIGHT_RESIZE_RATIO = 0.8249440715883669  # got from /Users/user/Documents/Coding/geo/notebook/geo_traffic_align.ipynb
+# HEIGHT_RESIZE_RATIO = 0.8240223463687151  # got from /Users/user/Documents/Coding/geo/notebook/geo_traffic_align.ipynb
+HEIGHT_RESIZE_RATIO = 0.7631578947368421  # zoom 19 for P'how
+HEIGHT_RESIZE_RATIO = 0.7631578947368421  # zoom 16.7 for N'kit
 
 
 def get_full_image_size(
@@ -138,16 +140,92 @@ def group_rgb_pixel_to_grid(rgb_pixel_df: pd.DataFrame, num_grid: int = 16):
     # move nearest_color out of index
     pivot_df.columns.name = None
     # drop white and grey
-    pivot_df = pivot_df.drop(["white", "grey"], axis=1)
-
+    columns_to_drop = ["white", "grey"]
+    columns_to_drop_existing = [
+        col for col in columns_to_drop if col in pivot_df.columns
+    ]
+    pivot_df = pivot_df.drop(columns=columns_to_drop_existing, errors="ignore")
     return pivot_df
 
 
+def process_image(
+    image_file_name,
+    image_folder_path,
+    full_image_folder_path,
+    crop_image_folder_path,
+    raw_data_folder_path,
+    grid_data_folder_path,
+    color_rgb_dict,
+    color_cache,
+    IS_SAVE,
+):
+    save_grid_data_folder_path = os.path.join(
+        grid_data_folder_path, image_file_name.replace(".png", ".csv")
+    )
+    if os.path.exists(save_grid_data_folder_path) is True:
+        return
+    if image_file_name.startswith("."):
+        return
+    image_path = os.path.join(image_folder_path, image_file_name)
+    save_full_image_path = os.path.join(full_image_folder_path, image_file_name)
+    if os.path.exists(save_full_image_path) is False:
+        image = extract_full_image(image_path)
+        if IS_SAVE is True:
+            image.save(save_full_image_path)
+    else:
+        image = Image.open(save_full_image_path)
+
+    save_crop_image_path = os.path.join(crop_image_folder_path, image_file_name)
+    if os.path.exists(save_crop_image_path) is False:
+        # image = crop_middle_image_from_side_size(image, 2400, 1600)
+        image = apply_circle_mask(image)
+        if IS_SAVE is True:
+            image.save(save_crop_image_path)
+    else:
+        image = Image.open(save_crop_image_path)
+
+    return
+    # save rgb_grid_data to csv
+    save_raw_data_folder_path = os.path.join(
+        raw_data_folder_path, image_file_name.replace(".png", ".pkl")
+    )
+    if os.path.exists(save_raw_data_folder_path) is False:
+        rgb_pixel_df = extract_rgb_pixel_from_image(image, color_rgb_dict, color_cache)
+        if IS_SAVE is True:
+            rgb_pixel_df.to_pickle(save_raw_data_folder_path)
+    else:
+        rgb_pixel_df = pd.read_pickle(save_raw_data_folder_path)
+
+    if os.path.exists(save_grid_data_folder_path) is False:
+        rgb_grid_df = group_rgb_pixel_to_grid(rgb_pixel_df)
+        store_id = image_file_name.replace(".png", "")
+        rgb_grid_df["store_id"] = store_id
+        rgb_grid_df.to_csv(save_grid_data_folder_path)
+
+
+from concurrent.futures import ProcessPoolExecutor
+from tqdm import tqdm
+from functools import partial
+
+
 def main():
-    IS_SAVE = False
+    IS_SAVE = True
     color_cache = {}
 
-    main_folder_path = "/Users/user/Documents/Coding/geo/notebook/data_chester_test"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_weekday_12"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_weekday_18"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_weekend_12"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_weekend_18"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_chester_weekday_12"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_chester_weekday_18"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_chester_weekend_12"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_chester_weekend_18"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_zoom19"
+    main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_zoom19_missing"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_zoom16_7"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_zoom16_7_new"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_zoom19_new"
+
     image_folder_path = f"{main_folder_path}/raw_image"
     full_image_folder_path = f"{main_folder_path}/full_image"
     crop_image_folder_path = f"{main_folder_path}/crop_image"
@@ -159,6 +237,7 @@ def main():
     os.makedirs(raw_data_folder_path, exist_ok=True)
     os.makedirs(grid_data_folder_path, exist_ok=True)
     image_file_name_list = os.listdir(image_folder_path)
+    # image_file_name_list = ["1025.png"]
     color_hex_dict = {
         "green": "82D375",
         "orange": "F19C5B",
@@ -168,48 +247,80 @@ def main():
         "grey": "E5E3E0",
     }
     color_rgb_dict = {key: hex_to_rgb(value) for key, value in color_hex_dict.items()}
-    for image_file_name in tqdm(image_file_name_list, desc="Processing images"):
-        print("image_file_name", image_file_name)
-        if image_file_name.startswith("."):
-            continue
-        image_path = os.path.join(image_folder_path, image_file_name)
-        save_full_image_path = os.path.join(full_image_folder_path, image_file_name)
-        if os.path.exists(save_full_image_path) is False:
-            image = extract_full_image(image_path)
-            if IS_SAVE is True:
-                image.save(save_full_image_path)
-        else:
-            image = Image.open(save_full_image_path)
 
-        save_crop_image_path = os.path.join(crop_image_folder_path, image_file_name)
-        if os.path.exists(save_crop_image_path) is False:
-            image = crop_middle_image_from_side_size(image, 2400, 1600)
-            if IS_SAVE is True:
-                image.save(save_crop_image_path)
-        else:
-            image = Image.open(save_crop_image_path)
-
-        # save rgb_grid_data to csv
-        save_raw_data_folder_path = os.path.join(
-            raw_data_folder_path, image_file_name.replace(".png", ".pkl")
+    with ProcessPoolExecutor() as executor:
+        process_func = partial(
+            process_image,
+            image_folder_path=image_folder_path,
+            full_image_folder_path=full_image_folder_path,
+            crop_image_folder_path=crop_image_folder_path,
+            raw_data_folder_path=raw_data_folder_path,
+            grid_data_folder_path=grid_data_folder_path,
+            color_rgb_dict=color_rgb_dict,
+            color_cache=color_cache,
+            IS_SAVE=IS_SAVE,
         )
-        if os.path.exists(save_raw_data_folder_path) is False:
-            rgb_pixel_df = extract_rgb_pixel_from_image(
-                image, color_rgb_dict, color_cache
+        list(
+            tqdm(
+                executor.map(process_func, image_file_name_list),
+                total=len(image_file_name_list),
+                desc="Processing images",
             )
-            if IS_SAVE is True:
-                rgb_pixel_df.to_pickle(save_raw_data_folder_path)
-        else:
-            rgb_pixel_df = pd.read_pickle(save_raw_data_folder_path)
-
-        save_grid_data_folder_path = os.path.join(
-            grid_data_folder_path, image_file_name.replace(".png", ".csv")
         )
-        if os.path.exists(save_grid_data_folder_path) is False:
-            rgb_grid_df = group_rgb_pixel_to_grid(rgb_pixel_df)
-            store_id = image_file_name.replace(".png", "")
-            rgb_grid_df["store_id"] = store_id
-            rgb_grid_df.to_csv(save_grid_data_folder_path)
+    # for image_file_name in tqdm(image_file_name_list, desc="Processing images"):
+    #     # print("image_file_name", image_file_name)
+    #     process_image(
+    #         image_file_name,
+    #         image_folder_path,
+    #         full_image_folder_path,
+    #         crop_image_folder_path,
+    #         raw_data_folder_path,
+    #         grid_data_folder_path,
+    #         color_rgb_dict,
+    #         color_cache,
+    #         IS_SAVE=IS_SAVE,
+    #     )
+
+    # if image_file_name.startswith("."):
+    #     continue
+    # image_path = os.path.join(image_folder_path, image_file_name)
+    # save_full_image_path = os.path.join(full_image_folder_path, image_file_name)
+    # if os.path.exists(save_full_image_path) is False:
+    #     image = extract_full_image(image_path)
+    #     if IS_SAVE is True:
+    #         image.save(save_full_image_path)
+    # else:
+    #     image = Image.open(save_full_image_path)
+
+    # save_crop_image_path = os.path.join(crop_image_folder_path, image_file_name)
+    # if os.path.exists(save_crop_image_path) is False:
+    #     image = crop_middle_image_from_side_size(image, 2400, 1600)
+    #     if IS_SAVE is True:
+    #         image.save(save_crop_image_path)
+    # else:
+    #     image = Image.open(save_crop_image_path)
+
+    # # save rgb_grid_data to csv
+    # save_raw_data_folder_path = os.path.join(
+    #     raw_data_folder_path, image_file_name.replace(".png", ".pkl")
+    # )
+    # if os.path.exists(save_raw_data_folder_path) is False:
+    #     rgb_pixel_df = extract_rgb_pixel_from_image(
+    #         image, color_rgb_dict, color_cache
+    #     )
+    #     if IS_SAVE is True:
+    #         rgb_pixel_df.to_pickle(save_raw_data_folder_path)
+    # else:
+    #     rgb_pixel_df = pd.read_pickle(save_raw_data_folder_path)
+
+    # save_grid_data_folder_path = os.path.join(
+    #     grid_data_folder_path, image_file_name.replace(".png", ".csv")
+    # )
+    # if os.path.exists(save_grid_data_folder_path) is False:
+    #     rgb_grid_df = group_rgb_pixel_to_grid(rgb_pixel_df)
+    #     store_id = image_file_name.replace(".png", "")
+    #     rgb_grid_df["store_id"] = store_id
+    #     rgb_grid_df.to_csv(save_grid_data_folder_path)
 
 
 if __name__ == "__main__":

@@ -110,14 +110,10 @@ def main():
     project = "chester"
     project = "7-eleven"
     if project == "chester":
-        data_path = (
-            "/Users/user/Documents/Coding/geo/notebook/chester_branch_post_process.xlsx"
-        )
+        data_path = f"{dir_path}/chester_branch_post_process.xlsx"
         save_folder = f"{dir_path}/data_chester/road_info"
     elif project == "7-eleven":
-        data_path = (
-            "/Users/user/Documents/Coding/geo/notebook/7-11 Location for Ford.xlsx"
-        )
+        data_path = f"{dir_path}/7-11 Location for Ford.xlsx"
         save_folder = f"{dir_path}/data_7_eleven/road_info"
     else:
         raise ValueError("project must be chester or 7-eleven")
@@ -126,7 +122,6 @@ def main():
     dist = 1600 // 2
 
     for index, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):
-        time.sleep(0.2)
         lat = row["latitude"]
         lon = row["longitude"]
         store_id = row["store_id"]
@@ -134,6 +129,7 @@ def main():
         if os.path.exists(save_path):
             print(f"skip {store_id}")
             continue
+
         road_info_gdf = get_road_info_from_lat_lon(lat, lon, dist)
         # add store_id column
         road_info_gdf["store_id"] = store_id
