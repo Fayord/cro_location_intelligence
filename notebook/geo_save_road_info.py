@@ -8,7 +8,7 @@ from geo_utils import (
 )
 import pyproj
 
-
+import pandas as pd
 from tqdm import tqdm
 
 import json
@@ -114,11 +114,15 @@ def main():
         save_folder = f"{dir_path}/data_chester/road_info"
     elif project == "7-eleven":
         data_path = f"{dir_path}/7-11 Location for Ford.xlsx"
+        data_path = f"{dir_path}/ร้านใหม่(3).csv"
         save_folder = f"{dir_path}/data_7_eleven/road_info"
     else:
         raise ValueError("project must be chester or 7-eleven")
     os.makedirs(save_folder, exist_ok=True)
-    df = load_data_excel(data_path)
+    try:
+        df = load_data_excel(data_path)
+    except:
+        df = pd.read_csv(data_path)
     dist = 1600 // 2
 
     for index, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):

@@ -169,3 +169,4 @@ notebook
 reverse_image_search/result
 reverse_image_search/search_result
 reverse_image_search/crop_image
+ensemble/*
