@@ -6,20 +6,23 @@ from geo_utils import load_data_excel
 
 
 # Function to update latlon values in the .ts file
-def update_latlon(file_path, new_lat, new_lon):
+def update_latlon_angle(file_path, new_lat, new_lon, angle):
     with open(file_path, "r") as file:
         data = file.read()
 
     # Assuming the latlon values are stored as variables lat and lon in the .ts file
-    # find line that have "center" remove
+    # find line that have "position" remove
     data_split = data.split("\n")
     for i, line in enumerate(data_split):
-        if "center" in line:
-            data_split[i] = f"center: {{ lat: {new_lat}, lng: {new_lon} }},"
+        if "position" in line:
+            data_split[i] = f"position: {{ lat: {new_lat}, lng: {new_lon} }},"
+            data_split[i + 1] = f"pov: {{ heading: {angle}, pitch: 0 }},"
+
             break
+
     data = "\n".join(data_split)
 
-    # then insert that line with center: { lat: lat, lng: lng },
+    # then insert that line with position: { lat: lat, lng: lng },
 
     with open(file_path, "w") as file:
         file.write(data)
@@ -91,11 +94,8 @@ if __name__ == "__main__":
     # post_fix = "weekday_12"
     # post_fix = "google_map"
     # post_fix = f"google_map_{num_part}"
-    # post_fix = f"poi_zoom_19"
-    if port == "5173":
-        post_fix = f"2024_02_15_300m_poi"
-    elif port == "5174":
-        post_fix = f"2024_02_15_1000m_poi"
+    post_fix = f"2024_02_15_street_view"
+
     selected_image_name_list_path = (
         f"{dir_path}/../save_google_map/image_name_fail_list.json"
     )
@@ -109,9 +109,9 @@ if __name__ == "__main__":
         # data_path = f"{dir_path}/7-11 Location for Ford.xlsx"
         # data_path = f"{dir_path}/7-11 Location for Ford only_new.xlsx"
         # data_path = f"{dir_path}/7-11 Location for Ford missing_p_how.xlsx"
-        # data_path = f"{dir_path}/7-11 Location for Ford_all+missing.xlsx"
-        data_path = f"{dir_path}/7-11 Location for Ford 2024_02_08.xlsx"
+        data_path = f"{dir_path}/7-11 Location for Ford_all+missing.xlsx"
         data_path = "/Users/user/Documents/Coding/cro_location_intelligence/save_google_map/P_jit_2024_02_15.xlsx"
+
         # data_path = f"{dir_path}/ร้านใหม่(3).csv"
 
         output_folder = f"{dir_path}/data_7_eleven_{post_fix}/raw_image"
@@ -125,35 +125,40 @@ if __name__ == "__main__":
     # save as csv
     print(df)
     # number of rows
-    # divided_df = divide_dataframe(df, total_part=2)
-    # df = divided_df[num_part]
+    divided_df = divide_dataframe(df, total_part=2)
+    df = divided_df[num_part]
+    # df get first 10 rows
+    # df = df.head(10)
     # loop each row
     # get lat lon
     driver = creat_driver(website_url)
+    interval_angel = 45
     time.sleep(5)
-    if port == "5173":
-        config_file_path = "/Users/user/Documents/Coding/js-samples/index.ts"
-    elif port == "5174":
-        config_file_path = "/Users/user/Documents/Coding/js-samples copy/index.ts"
+    if port == "5176":
+        config_file_path = "/Users/user/Documents/Coding/google_map_sample/js-samples_streetview/index.ts"
+    elif port == "5177":
+        config_file_path = "/Users/user/Documents/Coding/google_map_sample/js-samples_streetview copy/index.ts"
     else:
-        raise ValueError("port must be 5173 or 5174")
+        raise ValueError("port must be 5176 or 5177 ")
     for index, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):
         #     continue
         lat = row["latitude"]
         lon = row["longitude"]
-        store_id = row["store_id"]
-        update_latlon(config_file_path, lat, lon)
-        output_file_name = os.path.join(output_folder, f"{store_id}.png")
-        # time.sleep(1.2)
-        # if output_file_name is exist skip
-        # if f"{store_id}.png" not in selected_image_name_list:
-        #     print(f"skip {store_id}")
-        #     continue
-        if os.path.exists(output_file_name):
-            print(f"skip {store_id}")
-            continue
-        time.sleep(2)
-        take_screenshot(driver, output_file_name)
+        ori_store_id = row["store_id"]
+        for angle in range(0, 360, interval_angel):
+            store_id = f"{ori_store_id}_{angle}"
+            output_file_name = os.path.join(output_folder, f"{store_id}.png")
+            # if f"{ori_store_id}.png" not in selected_image_name_list:
+            #     print(f"skip {store_id}")
+            #     continue
+            update_latlon_angle(config_file_path, lat, lon, angle)
+            # time.sleep(1.2)
+            # if output_file_name is exist skip
+            if os.path.exists(output_file_name):
+                print(f"skip {store_id}")
+                continue
+            time.sleep(2)
+            take_screenshot(driver, output_file_name)
         # if index > 5:
         #     break
         # take_screenshot(website_url, output_file_name)
