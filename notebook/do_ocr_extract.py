@@ -29,8 +29,11 @@ def extract_ocr(image_path: str) -> List[dict]:
 def main():
 
     # input_folder = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19/full_image"
-    input_folder = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19_new/poi_full_image"
-    main_folder = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19_new/"
+    # input_folder = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19_new/poi_full_image"
+    # main_folder = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19_new/"
+
+    input_folder = "/Users/ford/Documents/coding/cro_location_intelligence/notebook/data_7_eleven_2024_04_09_300m_poi/full_image"
+    main_folder = "/Users/ford/Documents/coding/cro_location_intelligence/notebook/data_7_eleven_2024_04_09_300m_poi/"
 
     image_name_list = os.listdir(input_folder)
     all_store_list = []

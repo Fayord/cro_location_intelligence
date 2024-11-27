@@ -88,19 +88,22 @@ if __name__ == "__main__":
 
     # project = "chester"
     project = "7-eleven"
-    # post_fix = "weekday_12"
+    post_fix = "2024_04_09_300m"
     # post_fix = "google_map"
     # post_fix = f"google_map_{num_part}"
     # post_fix = f"poi_zoom_19"
-    if port == "5173":
-        post_fix = f"2024_02_15_300m_poi"
-    elif port == "5174":
-        post_fix = f"2024_02_15_1000m_poi"
-    selected_image_name_list_path = (
-        f"{dir_path}/../save_google_map/image_name_fail_list.json"
-    )
-    with open(selected_image_name_list_path, "r") as f:
-        selected_image_name_list = json.load(f)
+    # if port == "5173":
+    #     post_fix = f"2024_02_15_300m_poi"
+    # elif port == "5174":
+    #     post_fix = f"2024_02_15_1000m_poi"
+    # selected_image_name_list_path = (
+    #     f"{dir_path}/../save_google_map/image_name_fail_list.json"
+    # )
+    # # create folder if it not exist from selected_image_name_list_path
+    # os.makedirs(os.path.dirname(selected_image_name_list_path), exist_ok=True)
+
+    # with open(selected_image_name_list_path, "r") as f:
+    #     selected_image_name_list = json.load(f)
 
     if project == "chester":
         data_path = f"{dir_path}/chester_branch_post_process.xlsx"
@@ -112,6 +115,8 @@ if __name__ == "__main__":
         # data_path = f"{dir_path}/7-11 Location for Ford_all+missing.xlsx"
         data_path = f"{dir_path}/7-11 Location for Ford 2024_02_08.xlsx"
         data_path = "/Users/user/Documents/Coding/cro_location_intelligence/save_google_map/P_jit_2024_02_15.xlsx"
+        data_path = "/Users/ford/Documents/coding/cro_location_intelligence/data_location/missing_store_lat_long.csv"
+        data_path = "/Users/ford/Documents/coding/cro_location_intelligence/notebook/7-11 Location for Ford 2024_04_09.xlsx"
         # data_path = f"{dir_path}/ร้านใหม่(3).csv"
 
         output_folder = f"{dir_path}/data_7_eleven_{post_fix}/raw_image"
@@ -125,16 +130,21 @@ if __name__ == "__main__":
     # save as csv
     print(df)
     # number of rows
-    # divided_df = divide_dataframe(df, total_part=2)
+    divided_df = divide_dataframe(df, total_part=2)
     # df = divided_df[num_part]
+    # df = df[:10]
     # loop each row
     # get lat lon
     driver = creat_driver(website_url)
     time.sleep(5)
     if port == "5173":
-        config_file_path = "/Users/user/Documents/Coding/js-samples/index.ts"
+        config_file_path = (
+            "/Users/ford/Documents/coding/cro_google_map/js-samples/index.ts"
+        )
     elif port == "5174":
-        config_file_path = "/Users/user/Documents/Coding/js-samples copy/index.ts"
+        config_file_path = (
+            "/Users/ford/Documents/coding/cro_google_map/js-samples copy/index.ts"
+        )
     else:
         raise ValueError("port must be 5173 or 5174")
     for index, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):

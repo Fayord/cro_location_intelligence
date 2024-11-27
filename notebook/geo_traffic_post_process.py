@@ -5,8 +5,9 @@ from geo_utils import crop_middle_image_from_side_size, apply_circle_mask
 import easyocr
 
 # HEIGHT_RESIZE_RATIO = 0.8240223463687151  # got from /Users/user/Documents/Coding/geo/notebook/geo_traffic_align.ipynb
-HEIGHT_RESIZE_RATIO = 0.7631578947368421  # zoom 19 for P'how
-HEIGHT_RESIZE_RATIO = 0.7631578947368421  # zoom 16.7 for N'kit
+# HEIGHT_RESIZE_RATIO = 0.7631578947368421  # zoom 19 for P'how
+# HEIGHT_RESIZE_RATIO = 0.7631578947368421  # zoom 16.7 for N'kit
+HEIGHT_RESIZE_RATIO = 0.8  # zoom 16.7 for N'kit
 
 
 def get_full_image_size(
@@ -14,7 +15,7 @@ def get_full_image_size(
 ) -> tuple:
     _, height = image.size
     height = int(height * height_resize_ratio)
-    height = 1366
+    # height = 1366
     return height, height
 
 
@@ -233,8 +234,13 @@ def main():
     # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_zoom19_new"
     # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_terrain_missing_zoom19"
     # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_google_map_terrain_missing_zoom16_7"
-    main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19"
-    main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19_new"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19"
+    # main_folder_path = "/Users/user/Documents/Coding/cro_location_intelligence/notebook/data_7_eleven_poi_zoom_19_new"
+    # main_folder_path = "/Users/ford/Documents/coding/cro_location_intelligence/notebook/data_7_eleven_2024_03_15_300m_poi"
+    # main_folder_path = "/Users/ford/Documents/coding/cro_location_intelligence/notebook/data_7_eleven_2024_03_15_300m"
+    main_folder_path = "/Users/ford/Documents/coding/cro_location_intelligence/notebook/data_7_eleven_2024_04_09_300m"
+    # main_folder_path = "/Users/ford/Documents/coding/cro_location_intelligence/notebook/data_7_eleven_2024_04_09_300m_poi"
+
     image_folder_path = f"{main_folder_path}/raw_image"
     full_image_folder_path = f"{main_folder_path}/full_image"
     crop_image_folder_path = f"{main_folder_path}/crop_image"
