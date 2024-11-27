@@ -7,7 +7,7 @@ __pycache__/
 *cache*
 # C extensions
 *.so
-notebook/data
+notebook/data*
 .DS_Store
 voronoi
 # Distribution / packaging
@@ -164,7 +164,7 @@ cython_debug/
 #.idea/
 src/models*
 src/tb_logs
-notebook
+
 
 reverse_image_search/result
 reverse_image_search/search_result

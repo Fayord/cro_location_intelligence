@@ -21,6 +21,7 @@ from typing import List
 
 def buffer_road_metre(buffer_drive_data, road_size=1):
     # Assuming buffer_drive_data is a pandas DataFrame
+
     buffer_drive_data["geometry"] = buffer_drive_data.apply(
         lambda x: x.geometry.buffer(road_size / 2), axis=1
     )
