@@ -90,8 +90,9 @@ def get_road_info_from_lat_lon(lat, lon, dist, grid_size=100) -> gpd.GeoDataFram
         buffered_grid_gdf.loc[grid_id, "road_length_" + road_type] += area
     for index in buffered_grid_gdf.index:
         grid_id = index
-        grid_lat_id = int(grid_id % 16)
-        grid_lon_id = int(grid_id // 16)
+        grid_number_one_side = dist * 2 // grid_size
+        grid_lat_id = int(grid_id % grid_number_one_side)
+        grid_lon_id = int(grid_id // grid_number_one_side)
         buffered_grid_gdf.loc[grid_id, "grid_lat_id"] = grid_lat_id
         buffered_grid_gdf.loc[grid_id, "grid_lon_id"] = grid_lon_id
     # sum road length
@@ -107,9 +108,12 @@ def main():
     # then buffer road to count area in polygon then save
     dir_path = os.path.dirname(os.path.realpath(__file__))
     # data_path = "/Users/user/Documents/Coding/geo/notebook/7-11 Location for Ford.xlsx"
-
+    IS_FORCE = True
     project = "chester"
     project = "7-eleven"
+    project = "2024_11_7-eleven"
+    grid_size = 100
+    dist = 1600 // 2
     if project == "chester":
         data_path = f"{dir_path}/chester_branch_post_process.xlsx"
         save_folder = f"{dir_path}/data_chester/road_info"
@@ -117,6 +121,11 @@ def main():
         data_path = f"{dir_path}/7-11 Location for Ford.xlsx"
         data_path = f"{dir_path}/ร้านใหม่(3).csv"
         save_folder = f"{dir_path}/data_7_eleven/road_info"
+    elif project == "2024_11_7-eleven":
+        data_path = f"{dir_path}/7-11 Location for Ford.xlsx"
+        save_folder = f"{dir_path}/2024_11_data_7_eleven/road_info"
+        grid_size = 500
+        dist = 5000 // 2
     else:
         raise ValueError("project must be chester or 7-eleven")
     os.makedirs(save_folder, exist_ok=True)
@@ -124,24 +133,26 @@ def main():
         df = load_data_excel(data_path)
     except:
         df = pd.read_csv(data_path)
-    dist = 1600 // 2
-
+    number_tiles_aspected = dist * dist * 4 / grid_size / grid_size
     for index, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):
         lat = row["latitude"]
         lon = row["longitude"]
         store_id = row["store_id"]
         save_path = os.path.join(save_folder, f"{store_id}.pkl")
-        if os.path.exists(save_path):
+        if not IS_FORCE and os.path.exists(save_path):
             print(f"skip {store_id}")
             continue
 
-        road_info_gdf = get_road_info_from_lat_lon(lat, lon, dist)
+        road_info_gdf = get_road_info_from_lat_lon(lat, lon, dist, grid_size=grid_size)
         # add store_id column
         road_info_gdf["store_id"] = store_id
         # assert row = 16x16
-        assert road_info_gdf.shape[0] == 16 * 16
+        assert (
+            road_info_gdf.shape[0] == number_tiles_aspected
+        ), f"{store_id} {road_info_gdf.shape[0]} != {number_tiles_aspected}"
         # save as pickle
         road_info_gdf.to_pickle(save_path, protocol=4)
+        break
 
 
 if __name__ == "__main__":

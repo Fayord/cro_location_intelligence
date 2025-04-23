@@ -333,7 +333,6 @@ def get_bbox_polygon_from_lat_lon(
     # distance is radius in meter
     bbox = ox.utils_geo.bbox_from_point((lat, lon), dist=distance)
     bbox = tuple(map(float, bbox))
-    print("bbox", bbox)
     # create a new buffer polygon from this bbox geometry
     polygon = ox.utils_geo.bbox_to_poly(bbox)
 

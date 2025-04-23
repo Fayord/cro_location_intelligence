@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+extract_poi_data/data
+*.feather
+*.pkl
+*.csv
+*.db
+*.json
 
 *cache*
 # C extensions
