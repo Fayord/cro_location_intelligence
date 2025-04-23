@@ -2,7 +2,9 @@ import os
 import signal
 import sys
 import traceback
-from multiprocessing import Pool, Manager, Value, cpu_count
+from multiprocessing import Pool, Manager, cpu_count
+from ctypes import c_bool  # Import c_bool if you use it in the Value call
+from multiprocessing.sharedctypes import Synchronized  # Import Synchronized
 from ctypes import c_bool
 from typing import Optional, List, Dict, Tuple
 
@@ -85,7 +87,9 @@ def get_building_info_from_lat_lon_within_dist(
     return building_data
 
 
-def process_single_poi(args: Tuple[Dict, str, str, int, bool, Value]) -> bool:
+def process_single_poi(
+    args: Tuple[Dict, str, str, int, bool, Synchronized[c_bool]],
+) -> bool:
     """
     Process a single POI with comprehensive error handling and interrupt support.
 
