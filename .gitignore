@@ -9,7 +9,7 @@ extract_poi_data/data
 *.csv
 *.db
 *.json
-
+notebook/
 *cache*
 # C extensions
 *.so
